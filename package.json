@@ -1,0 +1,17 @@
+{
+  "name": "Satori-Plugin",
+  "version": "1.0.0",
+  "description": "Satori Adapter For TRSS-Yunzai",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.16.0",
+    "fast-xml-parser": "^4.3.5",
+    "file-type": "^19.0.0",
+    "node-html-parser": "^6.1.12",
+    "silk-wasm": "^3.2.3"
+  },
+  "keywords": [],
+  "author": "XasYer",
+  "license": "MIT"
+}

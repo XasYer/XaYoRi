@@ -3,8 +3,10 @@ logger.info(logger.yellow('- 正在加载 Satori 适配器插件'))
 import fs from 'node:fs'
 import WebSocket from 'ws'
 import fetch from 'node-fetch'
+import { join } from 'node:path'
 import { parse } from 'node-html-parser'
-import { createHash } from 'node:crypto'
+import { encode as encodeSilk } from 'silk-wasm'
+import { createHash, randomUUID } from 'node:crypto'
 import Runtime from '../../lib/plugins/runtime.js'
 import Handler from '../../lib/plugins/handler.js'
 import makeConfig from '../../lib/plugins/config.js'
@@ -358,10 +360,13 @@ class SatoriBot {
         for (let i of msg) {
             if (typeof i != 'object') i = { type: 'text', text: i }
             switch (i.type) {
+                case 'reply':
+                    content += `<quote id="${i.id}"/>`
+                    break
                 case 'text':
                     content += i.text
                     log += i.text
-                    break;
+                    break
                 case 'at':
                     if (i.qq == 'all') {
                         content += `<at type="all"/>`
@@ -369,10 +374,14 @@ class SatoriBot {
                         content += `<at id="${i.qq}"/>`
                     }
                     log += `@${i.qq}`
-                    break;
+                    break
                 case 'image':
                     content += `<img src="${this.getImageContent(i.file)}"/>`
                     log += '[图片]'
+                    break
+                case 'record':
+                    content += `<audio src="${await this.getRecordContent(i.file)}"/>`
+                    log += '[语音]'
                     break
                 case 'node':
                     switch (config.node) {
@@ -382,7 +391,7 @@ class SatoriBot {
                                 content += `<message>${c}</message>`
                                 log += l
                             }
-                            break;
+                            break
                         case 3:
                             if (Handler.has('ws.tool.toImg')) {
                                 const e = {
@@ -405,7 +414,7 @@ class SatoriBot {
                                 log += l
                             }
                             content += '</message>'
-                            break;
+                            break
                     }
                     break
                 default:
@@ -443,6 +452,28 @@ class SatoriBot {
             return `data:${contentType};base64,${buffer.toString('base64')}`
         }
         return content
+    }
+
+    async getRecordContent(data) {
+        let buffer
+        const inputFile = join('temp', randomUUID())
+        const pcmFile = join('temp', randomUUID())
+
+        try {
+            fs.writeFileSync(inputFile, await Bot.Buffer(data))
+            await Bot.exec(`ffmpeg -i "${inputFile}" -f s16le -ar 48000 -ac 1 "${pcmFile}"`)
+            buffer = Buffer.from((await encodeSilk(fs.readFileSync(pcmFile), 48000)).data)
+        } catch (err) {
+            logger.error(`silk 转码错误：${err}`)
+        }
+
+        for (const i of [inputFile, pcmFile]) {
+            try {
+                fs.unlinkSync(i)
+            } catch (err) { }
+        }
+
+        if (buffer) return `data:application/octet-stream;base64,${buffer.toString('base64')}`
     }
 }
 

@@ -360,10 +360,13 @@ class SatoriBot {
         for (let i of msg) {
             if (typeof i != 'object') i = { type: 'text', text: i }
             switch (i.type) {
+                case 'reply':
+                    content += `<quote id="${i.id}"/>`
+                    break
                 case 'text':
                     content += i.text
                     log += i.text
-                    break;
+                    break
                 case 'at':
                     if (i.qq == 'all') {
                         content += `<at type="all"/>`
@@ -371,7 +374,7 @@ class SatoriBot {
                         content += `<at id="${i.qq}"/>`
                     }
                     log += `@${i.qq}`
-                    break;
+                    break
                 case 'image':
                     content += `<img src="${this.getImageContent(i.file)}"/>`
                     log += '[图片]'
@@ -388,7 +391,7 @@ class SatoriBot {
                                 content += `<message>${c}</message>`
                                 log += l
                             }
-                            break;
+                            break
                         case 3:
                             if (Handler.has('ws.tool.toImg')) {
                                 const e = {
@@ -411,7 +414,7 @@ class SatoriBot {
                                 log += l
                             }
                             content += '</message>'
-                            break;
+                            break
                     }
                     break
                 default:

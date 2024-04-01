@@ -80,7 +80,8 @@ class SatoriBot {
             recallMsg: message_id => this.deleteMsg(message_id),
             delete: block => this.deleteFriend(user_id, block),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
-            poke: () => this.poke(`private:${user_id}`)
+            poke: () => this.poke(`private:${user_id}`),
+            getAvatarUrl: (size = 0) => `https://q1.qlogo.cn/g?b=qq&s=${size}&nk=${user_id}`
         }
     }
 
@@ -95,7 +96,7 @@ class SatoriBot {
             ...i,
             ...this.pickFriend(user_id),
             kick: () => this.setGroupKick(group_id, user_id, false),
-            getAvatarUrl: () => `https://q1.qlogo.cn/g?b=qq&s=0&nk=${user_id}`,
+            getAvatarUrl: (size = 0) => `https://q1.qlogo.cn/g?b=qq&s=${size}&nk=${user_id}`,
             poke: (id) => this.poke(group_id, id ? id : user_id)
         }
     }

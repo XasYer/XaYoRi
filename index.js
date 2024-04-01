@@ -65,6 +65,7 @@ class SatoriBot {
             kickMember: (user_id) => this.setGroupKick(group_id, user_id, false),
             quit: () => this.setGroupLeave(group_id),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
+            pokeMember: (user_id) => this.pickMember(group_id, user_id).poke(user_id)
         }
     }
 
@@ -79,6 +80,7 @@ class SatoriBot {
             recallMsg: message_id => this.deleteMsg(message_id),
             delete: block => this.deleteFriend(user_id, block),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
+            poke: () => this.poke(`private:${user_id}`)
         }
     }
 
@@ -93,7 +95,8 @@ class SatoriBot {
             ...i,
             ...this.pickFriend(user_id),
             kick: () => this.setGroupKick(group_id, user_id, false),
-            getAvatarUrl: () => `https://q1.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
+            getAvatarUrl: () => `https://q1.qlogo.cn/g?b=qq&s=0&nk=${user_id}`,
+            poke: (id) => this.poke(group_id, id ? id : user_id)
         }
     }
 
@@ -131,6 +134,21 @@ class SatoriBot {
 
     setGroupLeave(guild_id) {
         return this.sendApi('unsafe.guild.remove', { guild_id })
+    }
+
+    poke(channel_id, user_id) {
+        const content = user_id ? `<chronocat:poke user-id="${user_id}"/>` : `<chronocat:poke />`
+        let result = this.sendApi('message.create', {
+            channel_id: channel_id,
+            content
+        })
+        if (!Array.isArray(result)) {
+            result = [result]
+        }
+        const poppedResult = result.pop()
+        return {
+            message_id: `${channel_id}-${poppedResult.id}`
+        }
     }
 
     async getFriendList() {
@@ -418,7 +436,7 @@ class SatoriBot {
                     }
                     break
                 default:
-                    break;
+                    break
             }
         }
         return { content, log }

@@ -401,6 +401,10 @@ class SatoriBot {
                     content += `<audio src="${await this.getRecordContent(i.file)}"/>`
                     log += '[语音]'
                     break
+                case 'face':
+                    //发送qq表情 格式： e.reply({ type: 'face', id: 11 })
+                    content += `<chronocat:face id="${i.id}">`
+                    break
                 case 'node':
                     switch (config.node) {
                         case 2:

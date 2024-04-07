@@ -319,16 +319,15 @@ class SatoriBot {
         const root = parse(content, { blockTextElements: { script: false, style: false, pre: false } });
         const msg = []
         for (const i of root.childNodes) {
-            const data = {
-                type: i.rawTagName || 'text',
-            }
-            for (const attr of (i.rawAttrs || i.rawText).split(' ')) {
-                let [key, value] = attr.split('=')
-                if (!value) {
-                    value = key
-                    key = 'text'
+            const data = {}
+            if (i.rawTagName) {
+                for (const attr of i.rawAttrs.split(' ')) {
+                    let [key, value] = attr.split('=')
+                    data[key] = value.replace(/"/g, '')
                 }
-                data[key] = value.replace(/"/g, '')
+            } else {
+                data.type = 'text'
+                data.text = i.rawText
             }
             // for (const c of i.childNodes) {
             //     data.child.push(...await this.contentToMsg(c))

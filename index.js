@@ -62,6 +62,7 @@ class SatoriBot {
             sendMsg: msg => this.sendGroupMsg(group_id, msg),
             pickMember: user_id => this.pickMember(group_id, user_id),
             recallMsg: message_id => this.deleteMsg(message_id),
+            muteMember: (user_id, duration) => this.mute(group_id, user_id, duration),
             kickMember: (user_id) => this.setGroupKick(group_id, user_id, false),
             quit: () => this.setGroupLeave(group_id),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
@@ -96,9 +97,10 @@ class SatoriBot {
         return {
             ...i,
             ...this.pickFriend(user_id),
-            kick: () => this.setGroupKick(group_id, user_id, false),
+            kick: (user_id) => this.setGroupKick(group_id, user_id, false),
             getAvatarUrl: (size = 0) => `https://q1.qlogo.cn/g?b=qq&s=${size}&nk=${user_id}`,
-            poke: (id) => this.poke(group_id, id ? id : user_id)
+            poke: (id) => this.poke(group_id, id ? id : user_id),
+            mute: (user_id, duration) => this.mute(group_id, user_id, duration)
         }
     }
 
@@ -130,8 +132,25 @@ class SatoriBot {
         }
     }
 
+    /**
+     * @param guild_id 群id
+     * @param user_id 被禁言的用户id
+     * @param duration 禁言时长（毫秒），默认10分钟
+     */
+    mute(guild_id, user_id, duration = 600000) {
+        return this.sendApi('guild.member.mute', {
+            channel_id: guild_id,
+            user_id: String(user_id),
+            duration: duration
+        })
+    }
+
     setGroupKick(guild_id, user_id, permanent) {
-        return this.sendApi('guild.member.kick', { guild_id, user_id, permanent })
+        return this.sendApi('guild.member.kick', {
+            channel_id: guild_id,
+            user_id: String(user_id),
+            permanent: permanent
+        })
     }
 
     setGroupLeave(guild_id) {
@@ -291,7 +310,7 @@ class SatoriBot {
                 //   }
                 break
             default:
-                break;
+                break
         }
         event && Bot.em(event, e)
     }
@@ -312,7 +331,7 @@ class SatoriBot {
                 this.makeBot(data.body.logins[0], bot)
                 break
             default:
-                break;
+                break
         }
     }
 
@@ -324,7 +343,7 @@ class SatoriBot {
             if (i.rawTagName) {
                 for (const attr of i.rawAttrs.split(' ')) {
                     let [key, value] = attr.split('=')
-                    data[key] = value.replace(/"/g, '')
+                    data[key] = value?.replace(/"/g, '')
                 }
             } else {
                 data.type = 'text'

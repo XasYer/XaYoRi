@@ -65,7 +65,8 @@ class SatoriBot {
             kickMember: (user_id) => this.setGroupKick(group_id, user_id, false),
             quit: () => this.setGroupLeave(group_id),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
-            pokeMember: (user_id) => this.pickMember(group_id, user_id).poke(user_id)
+            pokeMember: (user_id) => this.pickMember(group_id, user_id).poke(user_id),
+            getAvatarUrl: (size = 0, history = 0) => `https://p.qlogo.cn/gh/${group_id}/${group_id}${history ? "_" + history : ""}/` + size
         }
     }
 

@@ -67,7 +67,8 @@ class SatoriBot {
             quit: () => this.setGroupLeave(group_id),
             makeForwardMsg: msg => { return { type: "node", data: msg } },
             pokeMember: (user_id) => this.pickMember(group_id, user_id).poke(user_id),
-            getAvatarUrl: (size = 0, history = 0) => `https://p.qlogo.cn/gh/${group_id}/${group_id}${history ? "_" + history : ""}/` + size
+            getAvatarUrl: (size = 0, history = 0) => `https://p.qlogo.cn/gh/${group_id}/${group_id}${history ? "_" + history : ""}/` + size,
+            muteAll: (enable) => this.muteAll(group_id, enable)
         }
     }
 
@@ -97,10 +98,10 @@ class SatoriBot {
         return {
             ...i,
             ...this.pickFriend(user_id),
-            kick: (user_id) => this.setGroupKick(group_id, user_id, false),
+            kick: () => this.setGroupKick(group_id, user_id, false),
             getAvatarUrl: (size = 0) => `https://q1.qlogo.cn/g?b=qq&s=${size}&nk=${user_id}`,
             poke: (id) => this.poke(group_id, id ? id : user_id),
-            mute: (user_id, duration) => this.mute(group_id, user_id, duration)
+            mute: (duration) => this.mute(group_id, user_id, duration)
         }
     }
 
@@ -142,6 +143,17 @@ class SatoriBot {
             channel_id: guild_id,
             user_id: String(user_id),
             duration: duration
+        })
+    }
+
+    /**
+     * @param channel_id 群id
+     * @param {boolean} enable 是否禁言
+     */
+    muteAll(channel_id, enable) {
+        return this.sendApi('unsafe.channel.mute', {
+            channel_id: channel_id,
+            enable: enable
         })
     }
 

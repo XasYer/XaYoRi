@@ -261,8 +261,9 @@ class SatoriBot {
                     nickname: data.user.name,
                 }
                 e.message_id = data.message.id
-                e.message = await this.contentToMsg(data.message.content)
-                e.raw_message = data.message.content
+                let content = ''
+                [e.message, content] = await this.contentToMsg(data.message.content)
+                e.raw_message = content || data.message.content
                 if (e.message.length == 0) {
                     return
                 }
@@ -348,11 +349,13 @@ class SatoriBot {
     }
 
     async contentToMsg(content) {
-        const root = parse(content, { blockTextElements: { script: false, style: false, pre: false } });
+        const root = parse(content, { blockTextElements: { script: false, style: false, pre: false } })
         const msg = []
+        let msg_content = ''
         for (const i of root.childNodes) {
             const data = {}
             if (i.rawTagName) {
+                data.type = i.rawTagName
                 for (const attr of i.rawAttrs.split(' ')) {
                     let [key, value] = attr.split('=')
                     data[key] = value?.replace(/"/g, '')
@@ -365,43 +368,53 @@ class SatoriBot {
             //     data.child.push(...await this.contentToMsg(c))
             // }
             switch (data.type) {
+                case 'at':
+                    data.qq = data.id
+                    msg_content += `{at: ${data.id}} `
+                    break
+                case 'text':
+                    msg_content += data.text
+                    break
                 case 'img':
                     data.type = 'image'
                     switch (config.img) {
                         case 'raw':
                             data.url = data.src
-                            break;
+                            break
                         case 'md5':
                             data.url = `https://gchat.qpic.cn/gchatpic_new/0/0-0-${await this.getImageMD5(data.src)}/0`
                             break
                         default:
                             data.url = data.src
-                            break;
+                            break
                     }
-                    break;
-                case 'text':
+                    msg_content += `{image:${await this.getImageMD5(data.src)}}`
                     break
-                case 'at':
-                    data.qq = data.id
+                case 'audio':
+                    data.type = 'record'
+                    data.url = data.src
+                    msg_content += `{ptt:}`
                     break
-                case 'chronocat:poke':
-                    break
-                // case 'quote':
-                //     break
-                // case 'audio':
-                //     data.type = 'record'
-                //     break
                 // case 'video':
                 //     break
-                // case 'chronocat:face':
-                //     data.type = 'face'
-                //     break
+                case 'chronocat:poke':
+                    break
+                case 'chronocat:pcpoke':
+                    data.type = 'poke'
+                    data.id = data.id
+                    msg_content += `{poke: ${data.id}}`
+                    break
+                case 'chronocat:face':
+                    data.type = 'face'
+                    data.id = data.id
+                    msg_content += `{face:${data.id}}`
+                    break
                 default:
                     continue
             }
             msg.push(data)
         }
-        return msg
+        return [msg, msg_content]
     }
 
     async msgToContent(msg) {
@@ -433,8 +446,13 @@ class SatoriBot {
                     content += `<audio src="${await this.getRecordContent(i.file)}"/>`
                     log += '[语音]'
                     break
+                case 'poke':
+                    //发送窗口戳一戳 示例： e.reply({ type: 'poke', id: 1 })
+                    content += `<chronocat:pcpoke id="${i.id}">`
+                    log += '[戳一戳]'
+                    break
                 case 'face':
-                    //发送qq表情 格式： e.reply({ type: 'face', id: 11 })
+                    //发送qq表情 示例： e.reply({ type: 'face', id: 11 })
                     content += `<chronocat:face id="${i.id}">`
                     break
                 case 'node':

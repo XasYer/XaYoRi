@@ -407,7 +407,7 @@ class SatoriBot {
                 case 'chronocat:face':
                     data.type = 'face'
                     data.id = data.id
-                    msg_content += `{face:${data.id}}`
+                    msg_content += `{face:${data.id},text:${data.name}}`
                     break
                 default:
                     continue

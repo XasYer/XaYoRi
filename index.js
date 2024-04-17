@@ -401,12 +401,10 @@ class SatoriBot {
                     break
                 case 'chronocat:pcpoke':
                     data.type = 'poke'
-                    data.id = data.id
                     msg_content += `{poke: ${data.id}}`
                     break
                 case 'chronocat:face':
                     data.type = 'face'
-                    data.id = data.id
                     msg_content += `{face:${data.id},text:${data.name}}`
                     break
                 default:

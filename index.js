@@ -261,7 +261,7 @@ class SatoriBot {
                     nickname: data.user.name,
                 }
                 e.message_id = data.message.id
-                let content = ''
+                let content
                 [e.message, content] = await this.contentToMsg(data.message.content)
                 e.raw_message = content || data.message.content
                 if (e.message.length == 0) {

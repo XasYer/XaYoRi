@@ -34,18 +34,17 @@ class SatoriBot {
     }
 
     async sendApi(api, body) {
-        return await fetch(`http://${this.host}:${this.port}/v1/${api}`, {
+        const res = await fetch(`http://${this.host}:${this.port}/v1/${api}`, {
             method: 'POST',
             body: JSON.stringify(body),
             headers: {
-                Authorization: 'Bearer ' + this.token,
+                'Authorization': `Bearer ${this.token}`,
                 'Content-Type': 'application/json',
                 'X-Platform': this.platform,
                 'X-Self-ID': this.self_id
             }
-        }).then(async r => {
-            return await r.json()
         })
+        return res.ok ? await res.json() : logger.error('请求失败', await res.text())
     }
 
     sendWs(op, body) {

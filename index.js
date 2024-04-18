@@ -115,7 +115,7 @@ class SatoriBot {
             channel_id: group_id,
             content
         })).pop()
-        return result ? { message_id: `private:${user_id}-${result.id}`} : logger.error('发送群聊消息失败: 暂不支持此类型消息')
+        return result ? { message_id: `private:${group_id}-${result.id}`} : logger.error('发送群聊消息失败: 暂不支持此类型消息')
     }
 
     async sendPrivateMsg(user_id, msg) {

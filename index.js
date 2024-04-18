@@ -281,14 +281,16 @@ class SatoriBot {
                         logger.info(`${logger.blue(`[${e.self_id}]`)} 好友消息：[${e.nickname}(${e.user_id})] ${e.raw_message}`)
                     }
                     event = `${e.post_type}.${e.message_type}.${e.sub_type}`
-                    break;
                 }
+                break
             // 解除禁言
             case 'unsafe-guild-unmute':
                 e.duration = 0
+                break
             // 群禁言
             case 'unsafe-guild-mute':
                 e.sub_type ||= 'ban'
+                break
             // 群员增加
             case 'guild-member-added':
                 e.post_type = 'notice'

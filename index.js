@@ -449,6 +449,7 @@ class SatoriBot {
                 case 'face':
                     //发送qq表情 示例： e.reply({ type: 'face', id: 11 })
                     content += `<chronocat:face id="${i.id}">`
+                    log += '[表情]'
                     break
                 case 'markdown':
                     content += `<chronocat:markdown>${i.data}</chronocat:markdown>`

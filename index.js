@@ -115,7 +115,7 @@ class SatoriBot {
             channel_id: group_id,
             content
         })).pop()
-        return result ? { message_id: `${group_id}-${result.id}`} : logger.error('发送群聊消息失败: 暂不支持此类型消息')
+        return result ? { message_id: `${group_id}-${result.id}` } : logger.error('发送群聊消息失败: 暂不支持此类型消息')
     }
 
     async sendPrivateMsg(user_id, msg) {
@@ -125,7 +125,7 @@ class SatoriBot {
             channel_id: `private:${user_id}`,
             content
         })).pop()
-        return result ? { message_id: `private:${user_id}-${result.id}`} : logger.error('发送好友消息失败: 暂不支持此类型消息')
+        return result ? { message_id: `private:${user_id}-${result.id}` } : logger.error('发送好友消息失败: 暂不支持此类型消息')
     }
 
     /**
@@ -449,6 +449,10 @@ class SatoriBot {
                 case 'face':
                     //发送qq表情 示例： e.reply({ type: 'face', id: 11 })
                     content += `<chronocat:face id="${i.id}">`
+                    break
+                case 'markdown':
+                    content += `<chronocat:markdown>${i.data}</chronocat:markdown>`
+                    log += '[markdown消息]'
                     break
                 case 'node':
                     switch (config.node) {

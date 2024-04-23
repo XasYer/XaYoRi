@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import WebSocket from 'ws'
 import fetch from 'node-fetch'
 import { join } from 'node:path'
+import imageSize from 'image-size'
 import { parse } from 'node-html-parser'
 import { encode as encodeSilk } from 'silk-wasm'
 import { createHash, randomUUID } from 'node:crypto'
@@ -12,8 +13,12 @@ import Handler from '../../lib/plugins/handler.js'
 import makeConfig from '../../lib/plugins/config.js'
 
 const { config, configSave } = await makeConfig('Satori', {
+    markdown: {
+        mode: false
+    },
     img: 'md5',
     node: 1,
+    toBotUpload: false,
     token: []
 })
 
@@ -109,22 +114,32 @@ class SatoriBot {
     }
 
     async sendGroupMsg(group_id, msg) {
-        const { content, log } = await this.msgToContent(msg)
+        let content, log
+        if (config.markdown.mode) {
+            [content, log] = await this.makeMarkdownMsg(msg)
+        } else {
+            [content, log] = await this.msgToContent(msg)
+        }
         logger.info(`${logger.blue(`[${this.uin} => ${group_id}]`)} 发送群消息：${log}`)
         const result = (await this.sendApi('message.create', {
             channel_id: group_id,
             content
-        })).pop()
+        }))?.pop()
         return result ? { message_id: `${group_id}-${result.id}` } : logger.error('发送群聊消息失败: 暂不支持此类型消息')
     }
 
     async sendPrivateMsg(user_id, msg) {
-        const { content, log } = await this.msgToContent(msg)
+        let content, log
+        if (config.markdown.mode) {
+            [content, log] = await this.makeMarkdownMsg(msg)
+        } else {
+            [content, log] = await this.msgToContent(msg)
+        }
         logger.info(`${logger.blue(`[${this.uin} => ${user_id}]`)} 发送好友消息：${log}`)
         const result = (await this.sendApi('message.create', {
             channel_id: `private:${user_id}`,
             content
-        })).pop()
+        }))?.pop()
         return result ? { message_id: `private:${user_id}-${result.id}` } : logger.error('发送好友消息失败: 暂不支持此类型消息')
     }
 
@@ -446,14 +461,13 @@ class SatoriBot {
                     content += `<chronocat:pcpoke id="${i.id}">`
                     log += '[戳一戳]'
                     break
+                case 'markdown':
+                    content += await this.makeMarkdownMsg(msg)
+                    log += '[markdown消息]'
+                    break
                 case 'face':
                     //发送qq表情 示例： e.reply({ type: 'face', id: 11 })
                     content += `<chronocat:face id="${i.id}">`
-                    log += '[表情]'
-                    break
-                case 'markdown':
-                    content += `<chronocat:markdown>${i.data}</chronocat:markdown>`
-                    log += '[markdown消息]'
                     break
                 case 'node':
                     switch (config.node) {
@@ -493,13 +507,13 @@ class SatoriBot {
                     break
             }
         }
-        return { content, log }
+        return [ content, log ]
     }
 
     async getImageMD5(url) {
         const buffer = Buffer.from(await (await fetch(url)).arrayBuffer())
         const hash = createHash('md5')
-        hash.update(buffer);
+        hash.update(buffer)
         return hash.digest('hex').toUpperCase()
     }
 
@@ -546,6 +560,93 @@ class SatoriBot {
         }
 
         if (buffer) return `data:application/octet-stream;base64,${buffer.toString('base64')}`
+    }
+
+    async makeBotImage(file) {
+        if (config.toBotUpload) {
+            for (const i of Bot.uin) {
+                if (!Bot[i].uploadImage) continue
+                try {
+                    const image = await Bot[i].uploadImage(file)
+                    if (image.url) return image
+                } catch (err) {
+                    Bot.makeLog('error', ['Bot', i, '图片上传错误', file, err])
+                }
+            }
+        }
+    }
+
+    async makeMarkdownMsg(msg) {
+        let content = '<chronocat:markdown>', log = '[markdown消息]', markdown = false
+        for (let i of Array.isArray(msg) ? msg : [msg]) {
+            if (typeof i == "object")
+                i = { ...i }
+            else
+                i = { type: "text", text: i }
+            switch (i.type) {
+                case "at":
+                    if (i.qq == "all") {
+                        content += `[@全体成员](mqqapi://markdown/mention?at_type=everyone)`
+                    } else {
+                        if (i.name) i.name += `(${i.qq})`
+                        else i.name = i.qq
+                        content += `[@${i.name}](mqqapi://markdown/mention?at_type=1&at_tinyid=${i.qq})`
+                    }
+                    markdown = true
+                    break
+                case "text":
+                    content += `${this.makeMarkdownText(i.text)}`
+                    markdown = true
+                    break
+                case "image":
+                    const { des, url } = await this.makeMarkdownImage(i.file)
+                    if(!des || !url) {
+                        content = '', log = ''
+                        markdown = false
+                        return await this.msgToContent(msg)
+                    } else {
+                        content += `${des}${url}`
+                        markdown = true
+                    }
+                    break
+                case "markdown":
+                    content += `${i.data}`
+                    markdown = true
+                    break
+                default:
+                    content = '', log = ''
+                    markdown = false
+                    return await this.msgToContent(msg)
+            }
+        }
+        if(markdown === true) content += `</chronocat:markdown>`
+        return [ content, log ]
+    }
+
+    makeMarkdownText(text) {
+        let match
+        try { match = text.match(/https?:\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g) } catch { }
+        if (match) for (const url of match)
+            text = text.replace(url, `<${url}>`)
+        return text
+    }
+
+    async makeMarkdownImage(file) {
+        const image = await this.makeBotImage(file)
+        if(!image) return false
+        if (!image.width || !image.height) {
+            try {
+              const size = imageSize(buffer)
+              image.width = size.width
+              image.height = size.height
+            } catch (err) {
+              Bot.makeLog('error', ['图片分辨率检测错误', file, err], data.self_id)
+            }
+        }
+        return {
+            des: `![图片 #${image?.width || 0}px #${image?.height || 0}px]`,
+            url: `(${image?.url})`,
+        }
     }
 }
 

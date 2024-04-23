@@ -461,13 +461,14 @@ class SatoriBot {
                     content += `<chronocat:pcpoke id="${i.id}">`
                     log += '[戳一戳]'
                     break
-                case 'markdown':
-                    content += await this.makeMarkdownMsg(msg)
-                    log += '[markdown消息]'
-                    break
                 case 'face':
                     //发送qq表情 示例： e.reply({ type: 'face', id: 11 })
                     content += `<chronocat:face id="${i.id}">`
+                    log += '[表情]'
+                    break
+                case 'markdown':
+                    content += await this.makeMarkdownMsg(msg)
+                    log += '[markdown消息]'
                     break
                 case 'node':
                     switch (config.node) {
@@ -507,7 +508,7 @@ class SatoriBot {
                     break
             }
         }
-        return [ content, log ]
+        return [content, log]
     }
 
     async getImageMD5(url) {
@@ -600,7 +601,7 @@ class SatoriBot {
                     break
                 case "image":
                     const { des, url } = await this.makeMarkdownImage(i.file)
-                    if(!des || !url) {
+                    if (!des || !url) {
                         content = '', log = ''
                         markdown = false
                         return await this.msgToContent(msg)
@@ -619,8 +620,8 @@ class SatoriBot {
                     return await this.msgToContent(msg)
             }
         }
-        if(markdown === true) content += `</chronocat:markdown>`
-        return [ content, log ]
+        if (markdown === true) content += `</chronocat:markdown>`
+        return [content, log]
     }
 
     makeMarkdownText(text) {
@@ -633,14 +634,14 @@ class SatoriBot {
 
     async makeMarkdownImage(file) {
         const image = await this.makeBotImage(file)
-        if(!image) return false
+        if (!image) return false
         if (!image.width || !image.height) {
             try {
-              const size = imageSize(buffer)
-              image.width = size.width
-              image.height = size.height
+                const size = imageSize(buffer)
+                image.width = size.width
+                image.height = size.height
             } catch (err) {
-              Bot.makeLog('error', ['图片分辨率检测错误', file, err], data.self_id)
+                Bot.makeLog('error', ['图片分辨率检测错误', file, err], data.self_id)
             }
         }
         return {
